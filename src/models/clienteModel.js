@@ -47,38 +47,73 @@ const clienteModel = {
     }
   },
 
-  inserirCliente: async (nomeCliente, cpfCliente) => {
+  
+  buscarEMAIL: async (emailCliente) => {
+    try {
+      const pool = await getConnection(); //Cria conexão com o DB
+      let querySql = "SELECT * FROM Clientes WHERE emailCliente = @emailCliente"; //faz busca do cpf
+
+      const result = await pool
+        .request()
+        .input("emailCliente", sql.VarChar(50), emailCliente)
+        .query(querySql);
+
+      return result.recordset;
+    } catch (error) {
+      console.error("Erro ao buscar EMAIL do cliente", error);
+      throw error; // Passa o erro para o controller tratar
+    }
+  },
+
+
+  inserirCliente: async ( nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente ) => {
     try {
       const pool = await getConnection();
 
       let querySQL =
-        "INSERT INTO Clientes(nomeCliente, cpfCliente) VALUES (@nomeCliente, @cpfCliente)";
+        "INSERT INTO Clientes(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente) VALUES (@nomeCliente, @cpfCliente, @foneCliente, @emailCliente, @enderecoCliente)";
 
       await pool
         .request()
-        .input("nomeCliente", sql.VarChar(200), nomeCliente)
-        .input("cpfCliente", sql.VarChar(12), cpfCliente)
+        .input("nomeCliente", sql.VarChar(100), nomeCliente)
+        .input("cpfCliente", sql.Char(11), cpfCliente)
+        .input("foneCliente", sql.Char(12), foneCliente)
+        .input("emailCliente", sql.VarChar(50), emailCliente)
+        .input("enderecoCliente", sql.VarChar(250), enderecoCliente)
         .query(querySQL);
     } catch (error) {
       console.error("Erro ao inserir clientes:", error);
       throw error; // Passa o erro para o controller tratar
     }
   },
-  atualizarCliente: async (nomeCliente, cpfCliente) => {
-    try {
-      const pool = await getConnection();
-      const querySQL = `
+
+atualizarCliente: async (nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente) => {
+  try {
+    const pool = await getConnection();
+    const querySQL = `
       UPDATE clientes
-      SET nomeCliente = @nomeCliente
+      SET 
+        nomeCliente = @nomeCliente,
+        foneCliente = @foneCliente,
+        emailCliente = @emailCliente,
+        enderecoCliente = @enderecoCliente
       WHERE cpfCliente = @cpfCliente
-      `;
-      await pool
-        .request()
-        .input("cpfCliente", sql.VarChar(11), cpfCliente)
-        .input("nomeCliente", sql.VarChar(100), nomeCliente)
-        .query(querySQL);
-    } catch (error) {}
-  },
+    `;
+
+    await pool
+      .request()
+      .input("nomeCliente", sql.VarChar(100), nomeCliente)
+      .input("cpfCliente", sql.Char(11), cpfCliente)
+      .input("foneCliente", sql.Char(12), foneCliente)
+      .input("emailCliente", sql.VarChar(50), emailCliente)
+      .input("enderecoCliente", sql.VarChar(250), enderecoCliente)
+      .query(querySQL);
+  } catch (error) {
+    console.error("Erro ao atualizar cliente:", error);
+    throw error; // Passa o erro para o controller tratar
+  }
+},
+
   deletarCliente: async (cpfCliente) => {
     try {
       const pool = await getConnection();
@@ -87,7 +122,7 @@ const clienteModel = {
 
       await pool
         .request()
-        .input("cpfCliente", sql.VarChar(11), cpfCliente)
+        .input("cpfCliente", sql.Char(11), cpfCliente)
         .query(querySQL);
     } catch (error) {
       console.error("Erro ao deletar cliente:", error);

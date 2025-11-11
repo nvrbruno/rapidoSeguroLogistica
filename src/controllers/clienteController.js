@@ -32,12 +32,12 @@ const clienteController = {
   //POST /CLIENTES
   //---------------------------
 
-  criarCliente: async (req, res) => { //terminar aqui
+  criarCliente: async (req, res) => { 
     try {
-      const { nomeCliente, cpfCliente } = req.body;
+      const { nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
       if (
         nomeCliente === undefined ||
-        cpfCliente == undefined
+        cpfCliente == undefined || foneCliente == undefined || emailCliente == undefined || enderecoCliente == undefined
       ) {
         return res
           .status(400)
@@ -49,7 +49,7 @@ const clienteController = {
         return res.status(409).json({ erro: "Esse cpf já esta cadastrado" });
       }
 
-      await clienteModel.inserirCliente(nomeCliente, cpfCliente );
+      await clienteModel.inserirCliente(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente);
 
       res.status(201).json({ message: "cliente cadastrado com sucesso!" });
     } catch (error) {
@@ -58,54 +58,64 @@ const clienteController = {
       res.status(500).json({erro: 'Erro no servidor ao cadastrar cliente!'})
     }
   },
+  
+atualizarCliente: async (req, res) => {
+  try {
+    const { cpfCliente } = req.params; 
+    const { nomeCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
+
+
+    if (!cpfCliente || cpfCliente.length !== 11) {
+      return res.status(400).json({ erro: "CPF inválido!" });
+    }
+
+    const cliente = await clienteModel.buscarCPF(cpfCliente);
+
+    if (!cliente || cliente.length === 0) {
+      return res.status(404).json({ erro: "Cliente não encontrado!" });
+    }
+
+    const clienteAtual = cliente[0];
+
+    const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente;
+    const cpfAtualizado = cpfCliente; 
+    const foneAtualizado = foneCliente ?? clienteAtual.foneCliente;
+    const emailAtualizado = emailCliente ?? clienteAtual.emailCliente;
+    const enderecoAtualizado = enderecoCliente ?? clienteAtual.enderecoCliente;
+
+    await clienteModel.atualizarCliente(
+      nomeAtualizado,
+      cpfAtualizado,
+      foneAtualizado,
+      emailAtualizado,
+      enderecoAtualizado
+    );
+
+    return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ erro: "Erro no servidor ao atualizar cliente." });
+  }
+},
 
   
-    atualizarCliente: async (req, res) => {
-    try {
-      const { cpfCliente } = req.params;
-      const { nomeCliente } = req.body;
 
-      if (cpfCliente.length !== 11) {
-        return res.status(400).json({ erro: "cpf inválido!" });
-      }
 
-      const cliente = await clienteModel.buscarPorCPF(cpfCliente);
-
-      if (!cliente || cliente.length !== 1) {
-        return res.status(404).json({ erro: "cliente não encontrado!" });
-      }
-      const clienteAtual = cliente[0];
-
-      const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente;
-      const cpfAtualizado = cpfCliente ?? clienteAtual.cpfCliente;
-
-      await clienteModel.atualizarCliente(
-        nomeAtualizado,
-        cpfAtualizado
-      );
-      res.status(200).json({ message: "Cliente atualizado com sucesso!" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ erro: "Erro no servidor ao atualizar cliente." });
-    }
-  },
   deletarCliente: async (req, res) => {
     try {
       const { cpfCliente } = req.params;
 
-      if (cpfCliente.length !== 11) {
-        return res.status(400).json({ erro: "cpf inválido!" });
-      }
+    if (!cpfCliente || cpfCliente.length !== 11) {
+      return res.status(400).json({ erro: "CPF inválido!" });
+    }
       
-      const cliente = await clienteModel.buscarPorCPF(cpfCliente);
-      
-      if (!cliente || cliente.length !== 1) {
-        return res.status(404).json({ erro: "cliente não encontrado!" });
-      }
-      // const produtoAtual = produto[0];
-      
-      // const nomeAtualizado = nomeProduto ?? produtoAtual.nomeProduto;
-      // const precoAtualizado = precoProduto ?? produtoAtual.precoProduto;
+
+    const cliente = await clienteModel.buscarCPF(cpfCliente);
+
+    if (!cliente || cliente.length === 0) {
+      return res.status(404).json({ erro: "Cliente não encontrado!" });
+    }
       console.log(cpfCliente);
 
       await clienteModel.deletarCliente(cpfCliente);
