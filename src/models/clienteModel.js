@@ -14,7 +14,7 @@ const clienteModel = {
       throw error; // Passa o erro para o controller tratar
     }
   },
-  buscarUm: async (idCliente) => {
+  buscarUm: async (idCliente) => { // Busca um cliente através do id 
     try {
       const pool = await getConnection();
 
@@ -37,7 +37,7 @@ const clienteModel = {
 
       const result = await pool
         .request()
-        .input("cpfCliente", sql.VarChar(12), cpfCliente)
+        .input("cpfCliente", sql.VarChar(12), cpfCliente) 
         .query(querySql);
 
       return result.recordset;
@@ -50,8 +50,8 @@ const clienteModel = {
   
   buscarEMAIL: async (emailCliente) => {
     try {
-      const pool = await getConnection(); //Cria conexão com o DB
-      let querySql = "SELECT * FROM Clientes WHERE emailCliente = @emailCliente"; //faz busca do cpf
+      const pool = await getConnection(); //Cria conexão com o Banco de Dados
+      let querySql = "SELECT * FROM Clientes WHERE emailCliente = @emailCliente"; //Faz a busca do email do cliente
 
       const result = await pool
         .request()
@@ -68,7 +68,7 @@ const clienteModel = {
 
   inserirCliente: async ( nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente ) => {
     try {
-      const pool = await getConnection();
+      const pool = await getConnection(); // 
 
       let querySQL =
         "INSERT INTO Clientes(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente) VALUES (@nomeCliente, @cpfCliente, @foneCliente, @emailCliente, @enderecoCliente)";
@@ -85,11 +85,11 @@ const clienteModel = {
       console.error("Erro ao inserir clientes:", error);
       throw error; // Passa o erro para o controller tratar
     }
-  },
+  }, 
 
 atualizarCliente: async (nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente) => {
   try {
-    const pool = await getConnection();
+    const pool = await getConnection(); //
     const querySQL = `
       UPDATE clientes
       SET 

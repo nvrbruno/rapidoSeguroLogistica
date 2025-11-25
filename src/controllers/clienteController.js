@@ -11,10 +11,10 @@ const clienteController = {
       const {idCliente} = req.query;
 
       if (idCliente) {
-        if(idCliente.length != 36) {
-          return res.status(400).json({erro: `id do cliente invalido!`})
+        if(idCliente.length != 36) { // Verifica o tamanho do id do cliente caso seja diferente de 36
+          return res.status(400).json({erro: `id do cliente invalido!`})// Resulta no seguinte erro
         }
-        const cliente = await clienteModel.buscarUm(idCliente);
+        const cliente = await clienteModel.buscarUm(idCliente);// Dentre todos os clientes busca apenas um
 
         return res.status(200).json(cliente);
       }
@@ -36,20 +36,20 @@ const clienteController = {
     try {
       const { nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
       if (
-        nomeCliente === undefined ||
+        nomeCliente === undefined || 
         cpfCliente == undefined || foneCliente == undefined || emailCliente == undefined || enderecoCliente == undefined
-      ) {
+      ) { // Verifica se todos os campos acimas estão preeenchidos
         return res
           .status(400)
-          .json({ erro: "Campos obrigatorios não preenchidos" });
+          .json({ erro: "Campos obrigatorios não preenchidos" }); //Se não esiverem preechidos retorna o seguinte erro
       }
       const clientes = await clienteModel.buscarCPF(cpfCliente)
 
-      if (clientes.length > 0) { //condição para procurar se o cpf ja está cadastrado no banco de dados
+      if (clientes.length > 0) { //Condição para procurar se o cpf ja está cadastrado no banco de dados
         return res.status(409).json({ erro: "Esse cpf já esta cadastrado" });
       }
 
-      await clienteModel.inserirCliente(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente);
+      await clienteModel.inserirCliente(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente);// Inserindo um cliente
 
       res.status(201).json({ message: "cliente cadastrado com sucesso!" });
     } catch (error) {
@@ -65,11 +65,11 @@ atualizarCliente: async (req, res) => {
     const { nomeCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
 
 
-    if (!cpfCliente || cpfCliente.length !== 11) {
-      return res.status(400).json({ erro: "CPF inválido!" });
+    if (!cpfCliente || cpfCliente.length !== 11) { // Verifica o tamanho do cpf se for diferente de 11
+      return res.status(400).json({ erro: "CPF inválido!" });// Retorna o seguinte erro
     }
 
-    const cliente = await clienteModel.buscarCPF(cpfCliente);
+    const cliente = await clienteModel.buscarCPF(cpfCliente);// Busca o cliente através dp cpf
 
     if (!cliente || cliente.length === 0) {
       return res.status(404).json({ erro: "Cliente não encontrado!" });
@@ -77,13 +77,13 @@ atualizarCliente: async (req, res) => {
 
     const clienteAtual = cliente[0];
 
-    const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente;
+    const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente; //Atualiza os dados antigos do cliente, para os dados atuais
     const cpfAtualizado = cpfCliente; 
     const foneAtualizado = foneCliente ?? clienteAtual.foneCliente;
     const emailAtualizado = emailCliente ?? clienteAtual.emailCliente;
     const enderecoAtualizado = enderecoCliente ?? clienteAtual.enderecoCliente;
 
-    await clienteModel.atualizarCliente(
+    await clienteModel.atualizarCliente( // Atualiza os dados do cliente
       nomeAtualizado,
       cpfAtualizado,
       foneAtualizado,
@@ -91,7 +91,7 @@ atualizarCliente: async (req, res) => {
       enderecoAtualizado
     );
 
-    return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" });
+    return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" }); // Retorna a mensagem caso tenha sido atualizado com sucesso
 
   } catch (error) {
     console.error(error);
@@ -106,8 +106,8 @@ atualizarCliente: async (req, res) => {
     try {
       const { cpfCliente } = req.params;
 
-    if (!cpfCliente || cpfCliente.length !== 11) {
-      return res.status(400).json({ erro: "CPF inválido!" });
+    if (!cpfCliente || cpfCliente.length !== 11) { // Verifica o tamanho do cpf 
+      return res.status(400).json({ erro: "CPF inválido!" });// Caso seja diferente de 11, resultará no seguinte erro
     }
       
 
@@ -118,7 +118,7 @@ atualizarCliente: async (req, res) => {
     }
       console.log(cpfCliente);
 
-      await clienteModel.deletarCliente(cpfCliente);
+      await clienteModel.deletarCliente(cpfCliente); // Deleta o cliente 
       res.status(200).json({ message: "Cliente excluído com sucesso!" });
     } catch (error) {
       console.error(error);

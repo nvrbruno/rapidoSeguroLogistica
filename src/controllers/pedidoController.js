@@ -14,11 +14,11 @@ const pedidoController = {
    */
   listarPedidos: async (req, res) => {
     try {
-      const pedidos = await pedidoModel.buscarTodos();
+      const pedidos = await pedidoModel.buscarTodos();// Busca todos os pedidos no banco de dados
 
       res.status(200).json(pedidos);
     } catch (error) {
-      console.error("Erro ao listar pedidos:", error);
+      console.error("Erro ao listar pedidos:", error); // Caso haja erro ao listar pedidos, retorna ao usuário
       res
         .status(500)
         .json({ erro: " Erro interno no servidor ao listar pedidos !" });
@@ -36,7 +36,7 @@ const pedidoController = {
         pesoPedido,
         valorBaseKm,
         valorBaseKg,
-      } = req.body;
+      } = req.body; // Desestrutura os dados do corpo da requisição
 
       if (
         idCliente == undefined ||
@@ -47,22 +47,22 @@ const pedidoController = {
         pesoPedido == undefined ||
         valorBaseKm == undefined ||
         valorBaseKg == undefined
-      ) {
+      ) {   // Verifica se todos os campos obrigatórios estão preenchidos
         return res
           .status(400)
-          .json({ erro: "Campos obrigatórios não preeenchidos !" });
+          .json({ erro: "Campos obrigatórios não preeenchidos !" }); // Caso não estajam retorna o seguinte erro
       }
 
-      if (!cpfCliente || cpfCliente.length !== 11) {
+      if (!cpfCliente || cpfCliente.length !== 11) { // Verifica se o cpf do cliente é válido
         return res.status(400).json({ erro: "CPF inválido!" });
       }
 
-      const cliente = await clienteModel.buscarCPF(cpfCliente);
-
+      const cliente = await clienteModel.buscarCPF(cpfCliente); // Verifica se o cliente existe
       if (!cliente || cliente.length === 0) {
         return res.status(404).json({ erro: "Cliente não encontrado!" });
       }
 
+      // Cálculos para o valor final 
       let valorDistancia = distanciaPedido * valorBaseKm;
       let valorPeso = pesoPedido * valorBaseKg;
       let valorBase = valorDistancia + valorPeso;
@@ -71,21 +71,23 @@ const pedidoController = {
       let descEntrega = 0;
       let taxaExtra = 0;
 
-      if (tipoPedido.length == 7) {
+        // Ajustes no valor com base no tipo de pedido e condições específicas
+      if (tipoPedido.length == 7) { // Se o pedido for "urgente"
         acrescEntrega = valorBase * 0.2;
         valorBase = valorBase + acrescEntrega;
       }
 
-      if (valorBase > 500) {
+      if (valorBase > 500) { // Se o valor ultrapassar 500, aplica desconto
         descEntrega = valorBase * 0.1;
         valorBase = valorBase - descEntrega;
       }
 
-      if (pesoPedido > 50) {
+      if (pesoPedido > 50) { // Se o peso for maior que 50, aplica taxa extra
         taxaExtra = 15;
         valorBase = valorBase + taxaExtra;
       }
 
+        // Insere o novo pedido no banco de dados
       await pedidoModel.inserirPedido(
         idCliente,
         dataPedido,
@@ -123,9 +125,9 @@ const pedidoController = {
         pesoPedido,
         valorBaseKm,
         valorBaseKg,
-      } = req.body;
+      } = req.body; // Extrai os dados do corpo da requisição
 
-      if (idPedido.length != 36) {
+      if (idPedido.length != 36) { // Verifica se o pedido existe
         return res.status(400).json({ Erro: "Id do pedido inválido" });
       }
       const result = await pedidoModel.buscarUm(idPedido);
@@ -134,12 +136,12 @@ const pedidoController = {
         return res.status(400).json({ Erro: "Esse pedido não existe" });
       }
 
-      const pedidoAntigo = result[0];
+      const pedidoAntigo = result[0];// Recupera o pedido antigo
 
-      const entrega = pedidoModel.buscarEntrega(pedidoAntigo.idPedido);
+      const entrega = pedidoModel.buscarEntrega(pedidoAntigo.idPedido); 
 
       if (idCliente) {
-        if (idCliente.length != 36) {
+        if (idCliente.length != 36) { // Verifica se o tamanho do id é maior ou igual 
           return res.status(400).json({ erro: "Id cliente Inválido!" });
         }
 
@@ -150,25 +152,28 @@ const pedidoController = {
         }
       }
 
+      // Atualiza os valores de distância e peso, levando em consideração os valores antigos ou os novos valores passados
       const valorDistanciaAtualizado =
         distanciaPedido && valorBaseKm
-          ? distanciaPedido * valorBaseKm
+          ? distanciaPedido * valorBaseKm // Se o novo valor de distância e base de valor de km foram passados
           : distanciaPedido
-          ? distanciaPedido * pedidoAntigo.valorBaseKm
+          ? distanciaPedido * pedidoAntigo.valorBaseKm // Se somente o valor de km foi passado
           : valorBaseKm
-          ? pedidoAntigo.distanciaPedido * valorBaseKm
+          ? pedidoAntigo.distanciaPedido * valorBaseKm // Se somente o valor de base de km foi passado
           : entrega.valorDistancia;
 
       const valorPesoAtualizado =
         pesoPedido && valorBaseKg
-          ? pesoPedido * valorBaseKg
+          ? pesoPedido * valorBaseKg // Se o novo valor de peso e base de valor de kg foram passados
           : pesoPedido
-          ? pesoPedido * pedidoAntigo.valorBaseKg
+          ? pesoPedido * pedidoAntigo.valorBaseKg // Se somente o valor de peso foi passado
           : valorBaseKg
-          ? pedidoAntigo.pesoPedido * valorBaseKg
-          : pedidoAntigo.valorPeso;
+          ? pedidoAntigo.pesoPedido * valorBaseKg // Se somente o valor de base de kg foi passado
+          : pedidoAntigo.valorPeso;  // Se nenhum valor for passado, mantém o valor antigo
 
-      let valorBaseAtualizado = valorDistanciaAtualizado + valorPesoAtualizado;
+
+      // Calcula o valor base do pedido com base na distância e peso
+      let valorBaseAtualizado = valorDistanciaAtualizado + valorPesoAtualizado; // Calcula o valor base do pedido com base na distância e peso
       const idClienteAtualizado = idCliente ?? pedidoAntigo.idCliente;
       const dataPedidoAtualizado = dataPedido ?? pedidoAntigo.dataPedido;
       const tipoPedidoAtualizado = tipoPedido ?? pedidoAntigo.tipoPedido;
@@ -178,6 +183,7 @@ const pedidoController = {
       const valorBaseKmAtualizado = valorBaseKm ?? pedidoAntigo.valorBaseKm;
       const valorBaseKgAtualizado = valorBaseKg ?? pedidoAntigo.valorBaseKg;
 
+       // Verifica se o tipo de pedido é válido (urgente ou normal)
       if (
         tipoPedidoAtualizado.toLowerCase() !== "urgente" &&
         tipoPedidoAtualizado.toLowerCase() !== "normal"
@@ -185,26 +191,28 @@ const pedidoController = {
         return res.status(400).json({ erro: "Tipo de pedido inválido!" });
       }
 
+          // Calcula os ajustes no valor do pedido (acréscimo, desconto e taxa extra) com base no tipo e outros critérios
       let acrescEntregaAtualizado = entrega.acrescEntrega;
       if (tipoPedidoAtualizado.toLowerCase() === "urgente") {
-        valorBaseAtualizado += valorBaseAtualizado * 0.2;
+        valorBaseAtualizado += valorBaseAtualizado * 0.2; // Aumento de 20% se o pedido for urgente
         acrescEntregaAtualizado = valorBaseAtualizado * 0.2;
       }
 
       let descEntregaAtualizado = entrega.descEntrega;
       if (valorBaseAtualizado > 500) {
-        valorBaseAtualizado -= valorBaseAtualizado * 0.1;
+        valorBaseAtualizado -= valorBaseAtualizado * 0.1; // Desconto de 10% se o valor for superior a 500
         descEntregaAtualizado = valorBaseAtualizado * 0.1;
       }
 
       let taxaExtraAtualizado = entrega.taxaExtra;
       if (pesoPedidoAtualizado > 50) {
-        valorBaseAtualizado += 15;
+        valorBaseAtualizado += 15; // Taxa extra de 15 se o peso for maior que 50
         taxaExtraAtualizado = 15;
       }
 
-      let valorFinalAtualizado = valorBaseAtualizado;
+      let valorFinalAtualizado = valorBaseAtualizado; // Valor final atualizado
 
+      // Atualiza o pedido no banco de dados
       await pedidoModel.atualizarPedido(
         idPedido,
         idClienteAtualizado,
@@ -231,21 +239,24 @@ const pedidoController = {
 
   atualizarStatus: async (req, res) => {
     try {
-      const { idPedido } = req.params;
+      const { idPedido } = req.params;  // Verifica se o ID do pedido é válido
       const { statusPedido } = req.body;
       if (!idPedido || idPedido.length !== 36) {
         return res.status(400).json({ erro: "ID do pedido inválido" });
       }
 
+        // Verifica se o status do pedido foi fornecido
       if (!statusPedido) {
         return res.status(400).json({ erro: "Status pedido é obrigatório" });
       }
-
+        // Busca o pedido no banco de dados  
       const pedido = await pedidoModel.buscarUm(idPedido);
 
       if (!pedido || pedido.length !== 1) {
         return res.status(404).json({ erro: "Pedido não encontrado" });
       }
+
+        // Atualiza o status do pedido no banco de dados
       await pedidoModel.statusPedido(idPedido, statusPedido, statusPedido);
 
       res.status(200).json({ message: "Pedido atualizado com sucesso." });
@@ -259,15 +270,18 @@ const pedidoController = {
     try {
       const { idPedido } = req.params;
 
+       // Verifica se o ID do pedido é válido
       if (idPedido.length != 36) {
         return res.status(400).json({ Erro: "Id do pedido inválido" });
       }
       const result = await pedidoModel.buscarUm(idPedido);
 
+      // Verifica se o pedido existe
       if (!result || result.length <= 0) {
         return res.status(400).json({ Erro: "Esse pedido não existe" });
       }
 
+      // Deleta o devido pedido
       await pedidoModel.deletarPedido(idPedido);
       res.status(200).json({ message: "Pedido excluído com sucesso!" });
     } catch (error) {
