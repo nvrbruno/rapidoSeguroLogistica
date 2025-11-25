@@ -227,10 +227,7 @@ SELECT * FROM Pedidos
     try {
       const pool = await getConnection();
 
-      const querySQL = `   
-    SELECT * FROM Entregas
-    WHERE idPedido = @idPedido
-     `;
+      const querySQL = "SELECT * FROM Entregas WHERE idPedido = @idPedido;";
 
       const result = await pool
         .request()
@@ -240,6 +237,37 @@ SELECT * FROM Pedidos
       return result.recordset;
     } catch (error) {
       console.error("Erro ao buscar entregas", error);
+      throw error;
+    }
+  },
+
+  deletarPedido: async (idPedido) => {
+    try {
+      const pool = await getConnection();
+      const transaction = new sql.Transaction(pool);
+      await transaction.begin();
+      const querySQL = `
+      DELETE FROM Pedidos
+      WHERE idPedido = @idPedido
+      `;
+      const querySQLEntregas = `      
+      DELETE FROM Entregas
+      WHERE idPedido = @idPedido
+    `;
+
+      await transaction
+        .request()
+        .input("idPedido", sql.UniqueIdentifier, idPedido)
+        .query(querySQLEntregas);
+
+      await transaction
+        .request()
+        .input("idPedido", sql.UniqueIdentifier, idPedido)
+        .query(querySQL);
+      transaction.commit();
+    } catch (error) {
+      transaction.rollback();
+      console.error("Erro ao deletar o pedido:", error);
       throw error;
     }
   },

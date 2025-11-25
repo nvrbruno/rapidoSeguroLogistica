@@ -1,6 +1,5 @@
 const { pedidoModel } = require("../models/pedidoModel");
 const { clienteModel } = require("../models/clienteModel");
-const { entregaModel } = require("../models/entregaModel");
 
 const pedidoController = {
   /**
@@ -137,7 +136,7 @@ const pedidoController = {
 
       const pedidoAntigo = result[0];
 
-      const entrega = entregaModel.buscarEntrega(pedidoAntigo.idPedido);
+      const entrega = pedidoModel.buscarEntrega(pedidoAntigo.idPedido);
 
       if (idCliente) {
         if (idCliente.length != 36) {
@@ -255,6 +254,28 @@ const pedidoController = {
       res.status(500).json({ erro: "Erro interno ao atualizar o pedido." });
     }
   },
+
+    deletarPedido: async (req, res) => {
+    try {
+      const { idPedido } = req.params;
+
+      if (idPedido.length != 36) {
+        return res.status(400).json({ Erro: "Id do pedido inválido" });
+      }
+      const result = await pedidoModel.buscarUm(idPedido);
+
+      if (!result || result.length <= 0) {
+        return res.status(400).json({ Erro: "Esse pedido não existe" });
+      }
+
+      await pedidoModel.deletarPedido(idPedido);
+      res.status(200).json({ message: "Pedido excluído com sucesso!" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ erro: "Erro no servidor ao excluir o pedido." });
+    }
+  },
+
 };
 
 module.exports = { pedidoController };
