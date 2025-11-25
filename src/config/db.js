@@ -4,7 +4,7 @@ const config = {
   user: process.env.USER_DB,
   password: process.env.PASSWORD_DB,
   server: process.env.SERVER_DB,
-  database: process.env.ATABASE_DB,
+  database: process.env.DATABASE_DB,
   options: {
     encrypt: true,
     trustServerCertificate: true,
