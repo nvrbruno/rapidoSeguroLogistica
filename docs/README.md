@@ -4,6 +4,9 @@
 ### MODELO ENTIDADE RELACIONAMENTO
 ![MODELO ENTIDADE RELACIONAMENTO](./Rapido%20&%20Seguro%20Logistica.png)
 
+### KANBAN
+![KANBAN](./Kanban.png)
+
 ### GET/clientes
 -**Descrição**: Mostra todos os clientes
 
