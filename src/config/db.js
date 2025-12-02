@@ -20,4 +20,12 @@ async function getConnection() {
   }
 }
 
+(async () => {
+  const pool = await getConnection();
+
+  if (pool) {
+    console.log("Conexão com o Banco de Dados bem-sucedida!");
+  }
+})();
+
 module.exports = { sql, getConnection };

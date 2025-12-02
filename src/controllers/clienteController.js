@@ -6,15 +6,26 @@ const clienteController = {
   //GET /CLIENTES
   //---------------------------
 
+  /**
+   * Controlador responsável por listar clientes.
+   *  * @async
+   * @function listarClientes
+   * @param {object} req - Objeto da requisição contendo idCliente em req.query.
+   * @param {object} res - Objeto da resposta do servidor.
+   * @returns {Promise<void>} Retorna uma lista de clientes ou apenas um cliente filtrado.
+   * @throws Retorna erro 400 se o idCliente tiver formato inválido.
+   */
+
   listarClientes: async (req, res) => {
- try {
-      const {idCliente} = req.query;
+    try {
+      const { idCliente } = req.query;
 
       if (idCliente) {
-        if(idCliente.length != 36) { // Verifica o tamanho do id do cliente caso seja diferente de 36
-          return res.status(400).json({erro: `id do cliente invalido!`})// Resulta no seguinte erro
+        if (idCliente.length != 36) {
+          // Verifica o tamanho do id do cliente caso seja diferente de 36
+          return res.status(400).json({ erro: `id do cliente invalido!` }); // Resulta no seguinte erro
         }
-        const cliente = await clienteModel.buscarUm(idCliente);// Dentre todos os clientes busca apenas um
+        const cliente = await clienteModel.buscarUm(idCliente); // Dentre todos os clientes busca apenas um
 
         return res.status(200).json(cliente);
       }
@@ -31,100 +42,171 @@ const clienteController = {
   //ADICIONAR CLIENTES
   //POST /CLIENTES
   //---------------------------
+  /**
+   * Controlador responsável por cadastrar um novo cliente.
+   * * @async
+   * @function criarCliente
+   * @param {object} req - Objeto da requisição contendo dados do cliente no corpo.
+   * @param {object} res - Objeto da resposta do servidor.
+   * @returns {Promise<void>} Retorna mensagem de sucesso ao cadastrar o cliente.
+   * @throws Retorna erro 400 caso algum campo obrigatório esteja ausente.
+   */
 
-  criarCliente: async (req, res) => { 
+  criarCliente: async (req, res) => {
     try {
-      const { nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
+      const {
+        nomeCliente,
+        cpfCliente,
+        foneCliente,
+        emailCliente,
+        enderecoCliente,
+      } = req.body;
       if (
-        nomeCliente === undefined || 
-        cpfCliente == undefined || foneCliente == undefined || emailCliente == undefined || enderecoCliente == undefined
-      ) { // Verifica se todos os campos acimas estão preeenchidos
+        nomeCliente === undefined ||
+        cpfCliente == undefined ||
+        foneCliente == undefined ||
+        emailCliente == undefined ||
+        enderecoCliente == undefined
+      ) {
+        // Verifica se todos os campos acimas estão preeenchidos
         return res
           .status(400)
           .json({ erro: "Campos obrigatorios não preenchidos" }); //Se não esiverem preechidos retorna o seguinte erro
       }
-      const clientes = await clienteModel.buscarCPF(cpfCliente)
+      const clientesCPF = await clienteModel.buscarCPF(cpfCliente);
 
-      if (clientes.length > 0) { //Condição para procurar se o cpf ja está cadastrado no banco de dados
-        return res.status(409).json({ erro: "Esse cpf já esta cadastrado" });
+      if (clientesCPF.length > 0) {
+        return res.status(409).json({ erro: "Esse CPF já está cadastrado" });
       }
 
-      await clienteModel.inserirCliente(nomeCliente, cpfCliente, foneCliente, emailCliente, enderecoCliente);// Inserindo um cliente
+      const clientesEmail = await clienteModel.buscarEMAIL(emailCliente);
+
+      if (clientesEmail.length > 0) {
+        return res.status(409).json({ erro: "Esse EMAIL já está cadastrado" });
+      }
+
+      await clienteModel.inserirCliente(
+        nomeCliente,
+        cpfCliente,
+        foneCliente,
+        emailCliente,
+        enderecoCliente
+      ); // Inserindo um cliente
 
       res.status(201).json({ message: "cliente cadastrado com sucesso!" });
     } catch (error) {
-      
-      console.error('Erro ao cadastrar o cliente:',error);
-      res.status(500).json({erro: 'Erro no servidor ao cadastrar cliente!'})
+      console.error("Erro ao cadastrar o cliente:", error);
+      res.status(500).json({ erro: "Erro no servidor ao cadastrar cliente!" });
     }
   },
-  
-atualizarCliente: async (req, res) => {
-  try {
-    const { cpfCliente } = req.params; 
-    const { nomeCliente, foneCliente, emailCliente, enderecoCliente } = req.body;
 
+  /**
+   * Controlador responsável por atualizar os dados de um cliente existente.
+   * @async
+   * @function atualizarCliente
+   * @param {object} req - Objeto da requisição contendo idCliente em req.params e dados no corpo.
+   * @param {object} res - Objeto da resposta do servidor.
+   * @returns {Promise<void>} Retorna mensagem de sucesso ao atualizar os dados do cliente.
+   * @throws Retorna erro 400 caso o idCliente não seja válido.
+   */
 
-    if (!cpfCliente || cpfCliente.length !== 11) { // Verifica o tamanho do cpf se for diferente de 11
-      return res.status(400).json({ erro: "CPF inválido!" });// Retorna o seguinte erro
-    }
-
-    const cliente = await clienteModel.buscarCPF(cpfCliente);// Busca o cliente através dp cpf
-
-    if (!cliente || cliente.length === 0) {
-      return res.status(404).json({ erro: "Cliente não encontrado!" });
-    }
-
-    const clienteAtual = cliente[0];
-
-    const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente; //Atualiza os dados antigos do cliente, para os dados atuais
-    const cpfAtualizado = cpfCliente; 
-    const foneAtualizado = foneCliente ?? clienteAtual.foneCliente;
-    const emailAtualizado = emailCliente ?? clienteAtual.emailCliente;
-    const enderecoAtualizado = enderecoCliente ?? clienteAtual.enderecoCliente;
-
-    await clienteModel.atualizarCliente( // Atualiza os dados do cliente
-      nomeAtualizado,
-      cpfAtualizado,
-      foneAtualizado,
-      emailAtualizado,
-      enderecoAtualizado
-    );
-
-    return res.status(200).json({ mensagem: "Cliente atualizado com sucesso!" }); // Retorna a mensagem caso tenha sido atualizado com sucesso
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ erro: "Erro no servidor ao atualizar cliente." });
-  }
-},
-
-  
-
-
-  deletarCliente: async (req, res) => {
+  atualizarCliente: async (req, res) => {
     try {
-      const { cpfCliente } = req.params;
+      const { idCliente } = req.params;
+      const {
+        nomeCliente,
+        foneCliente,
+        emailCliente,
+        enderecoCliente,
+        cpfCliente,
+      } = req.body;
 
-    if (!cpfCliente || cpfCliente.length !== 11) { // Verifica o tamanho do cpf 
-      return res.status(400).json({ erro: "CPF inválido!" });// Caso seja diferente de 11, resultará no seguinte erro
-    }
-      
+      if (!idCliente || idCliente.length !== 36) {
+        return res.status(400).json({ error: "ID inválido" });
+      }
 
-    const cliente = await clienteModel.buscarCPF(cpfCliente);
+      const cliente = await clienteModel.buscarUm(idCliente); // Busca o cliente através dp cpf
 
-    if (!cliente || cliente.length === 0) {
-      return res.status(404).json({ erro: "Cliente não encontrado!" });
-    }
-      console.log(cpfCliente);
+      if (!cliente || cliente.length === 0) {
+        return res.status(404).json({ erro: "Cliente não encontrado!" });
+      }
 
-      await clienteModel.deletarCliente(cpfCliente); // Deleta o cliente 
-      res.status(200).json({ message: "Cliente excluído com sucesso!" });
+      const clienteAtual = cliente[0];
+
+      const nomeAtualizado = nomeCliente ?? clienteAtual.nomeCliente; //Atualiza os dados antigos do cliente, para os dados atuais
+      const cpfAtualizado = cpfCliente ?? clienteAtual.cpfCliente;
+      const foneAtualizado = foneCliente ?? clienteAtual.foneCliente;
+      const emailAtualizado = emailCliente ?? clienteAtual.emailCliente;
+      const enderecoAtualizado =
+        enderecoCliente ?? clienteAtual.enderecoCliente;
+
+      await clienteModel.atualizarCliente(
+        //Atualizar dados do cliente
+        nomeAtualizado,
+        cpfAtualizado,
+        foneAtualizado,
+        emailAtualizado,
+        enderecoAtualizado,
+        idCliente
+      );
+
+      return res
+        .status(200)
+        .json({ mensagem: "Cliente atualizado com sucesso!" }); // Retorna a mensagem caso tenha sido atualizado com sucesso
     } catch (error) {
       console.error(error);
-      res.status(500).json({ erro: "Erro no servidor ao excluir o cliente." });
+      return res
+        .status(500)
+        .json({ erro: "Erro no servidor ao atualizar cliente." });
+    }
+  },
+
+  /**
+ * Controlador responsável por deletar um cliente.
+ *  @async
+ * @function deletarCliente
+ * @param {object} req - Objeto da requisição contendo idCliente em req.params.
+ * @param {object} res - Objeto da resposta do servidor.
+ * @returns {Promise<void>} Retorna mensagem de sucesso ao deletar o cliente.
+ * @throws Retorna erro 400 caso o ID seja inválido.
+ */
+  deletarCliente: async (req, res) => {
+    try {
+      const { idCliente } = req.params;
+
+      // Verificação das regras
+      if (!idCliente || idCliente.length !== 36) {
+        return res.status(400).json({ erro: "ID do cliente inválido." });
+      }
+
+      // Verifica se o cliente existe
+      const cliente = await clienteModel.buscarUm(idCliente);
+
+      if (!cliente || cliente.length === 0) {
+        return res.status(404).json({ erro: "Este cliente não existe." });
+      }
+
+      // Verifica se o cliente tem pedidos vinculados
+      const pedidos = await clienteModel.buscarPedidosPorCliente(idCliente);
+
+      if (pedidos.length > 0) {
+        return res.status(409).json({
+          erro: "Não é possível deletar o cliente, pois ele possui pedidos vinculados.",
+        });
+      }
+
+      await clienteModel.deletarCliente(idCliente);
+
+      return res
+        .status(200)
+        .json({ mensagem: "Cliente deletado com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao deletar cliente:", error);
+      return res.status(500).json({
+        erro: "Erro interno no servidor ao tentar deletar o cliente.",
+      });
     }
   },
 };
 
-module.exports = { clienteController }; 
+module.exports = { clienteController };

@@ -8,10 +8,10 @@ router.get("/clientes", clienteController.listarClientes);
 //POST /clientes -> Adiciona um novo cliente
 router.post("/clientes", clienteController.criarCliente);
 
-//PUT /clientes/cpfCliente -> atualizar um cliente
-router.put("/clientes/:cpfCliente", clienteController.atualizarCliente);
+//PUT /clientes/idCliente -> atualizar um cliente
+router.put("/clientes/:idCliente", clienteController.atualizarCliente);
 
-//DELETE /clientes/cpfCliente -> DELETAR um cliente
-router.delete("/clientes/:cpfCliente", clienteController.deletarCliente);
+//DELETE /clientes/idCliente -> DELETAR um cliente
+router.delete("/clientes/:idCliente", clienteController.deletarCliente);
 
 module.exports = { clienteRoutes: router };

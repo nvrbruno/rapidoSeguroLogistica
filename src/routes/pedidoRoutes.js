@@ -13,7 +13,6 @@ const { pedidoController } = require("../controllers/pedidoController");
 
 router.get('/pedidos', pedidoController.listarPedidos);
 router.post ("/pedidos", pedidoController.criarPedido);
-router.put('/pedidos/statusEntrega/:idPedido', pedidoController.atualizarStatus); // Atualiza somente o status da entrega (por exemplo: se está "em trânsito" )
 router.put('/pedidos/:idPedido', pedidoController.atualizarPedido); // Atualiza somente o status do pedido(por exemplo : se está "cancelado")
 router.delete("/pedidos/:idPedido", pedidoController.deletarPedido);
 

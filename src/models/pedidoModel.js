@@ -8,25 +8,37 @@ const pedidoModel = {
    * @returns {Promise<Array>} Retorna uma lista com todos os pedidos e seus itens.
    * @throws Mostra no console o error e propaga caso a busca falhe.
    */
-  buscarTodos: async () => { // Busca todos os pedidos
+  buscarTodos: async () => {
+    // Busca todos os pedidos
     try {
       const pool = await getConnection();
 
       const querySQL = `
                 
     SELECT * FROM Pedidos 
- `; // Consulta no SQL para buscar todos os pedidos 
+ `; // Consulta no SQL para buscar todos os pedidos
 
-      const result = await pool.request().query(querySQL); 
+      const result = await pool.request().query(querySQL);
 
       return result.recordset;
     } catch (error) {
-      console.error("Erro ao buscar pedidos", error); // Caso houver erro ao buscar retorna ao usuário 
+      console.error("Erro ao buscar pedidos", error); // Caso houver erro ao buscar retorna ao usuário
       throw error;
     }
   },
 
-  buscarUm: async (idPedido) => { //Busca um pedido através do id
+  /**
+   * Busca um pedido específico pelo seu ID.
+   *
+   * @async
+   * @function buscarUm
+   * @param {string} idPedido - ID do pedido a ser buscado (UUID).
+   * @returns {Promise<Array>} Retorna um array com os dados do pedido encontrado.
+   * @throws Mostra no console o erro e propaga caso a busca falhe.
+   */
+
+  buscarUm: async (idPedido) => {
+    //Busca um pedido através do id
     try {
       const pool = await getConnection();
 
@@ -43,7 +55,7 @@ const pedidoModel = {
     }
   },
 
-  inserirPedido: async ( 
+  inserirPedido: async (
     idCliente,
     dataPedido,
     tipoPedido,
@@ -57,7 +69,8 @@ const pedidoModel = {
     acrescEntrega,
     descEntrega,
     taxaExtra
-  ) => { // Inseri um novo pedido 
+  ) => {
+    // Inseri um novo pedido
     const pool = await getConnection();
     const transaction = new sql.Transaction(pool);
     await transaction.begin();
@@ -89,7 +102,7 @@ const pedidoModel = {
 
       const result = await transaction
         .request()
-        .input("idCliente", sql.UniqueIdentifier, idCliente) 
+        .input("idCliente", sql.UniqueIdentifier, idCliente)
         .input("dataPedido", sql.Date, dataPedido)
         .input("tipoPedido", sql.VarChar(7), tipoPedido)
         .input("distanciaPedido", sql.Decimal(10, 2), distanciaPedido)
@@ -97,14 +110,14 @@ const pedidoModel = {
         .input("valorBaseKm", sql.Decimal(10, 2), valorBaseKm)
         .input("valorBaseKg", sql.Decimal(10, 2), valorBaseKg)
         .input("valorTotal", sql.Decimal(10, 2), valorTotal)
-        .query(querySQL);// Executa a consulta no SQL
+        .query(querySQL); // Executa a consulta no SQL
 
       const idPedido = result.recordset[0].idPedido;
 
       const querySQLEntregas = `
       INSERT INTO Entregas (idEntrega, idPedido, valorDistancia, valorPeso, acrescEntrega, descEntrega, taxaExtra, valorFinal)
       VALUES(@idEntrega, @idPedido, @valorDistancia, @valorPeso, @acrescEntrega, @descEntrega, @taxaExtra, @valorFinal )
-    `; // Insere os dados de entrega 
+    `; // Insere os dados de entrega
 
       await transaction
         .request()
@@ -117,7 +130,7 @@ const pedidoModel = {
         .input("taxaExtra", sql.Decimal(10, 2), taxaExtra)
         .input("valorFinal", sql.Decimal(10, 2), valorTotal)
         .query(querySQLEntregas); // Executa a consulta no SQL
-         
+
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
@@ -126,7 +139,7 @@ const pedidoModel = {
     }
   },
 
-  atualizarPedido: async ( 
+  atualizarPedido: async (
     idPedido,
     idClienteAtualizado,
     dataPedidoAtualizado,
@@ -141,7 +154,8 @@ const pedidoModel = {
     taxaExtraAtualizado,
     descEntregaAtualizado,
     valorFinalAtualizado
-  ) => { // Atualiza as informações do pedido antigo
+  ) => {
+    // Atualiza as informações do pedido antigo
     const pool = await getConnection();
     const transaction = new sql.Transaction(pool);
     await transaction.begin();
@@ -194,38 +208,25 @@ const pedidoModel = {
         .input("taxaExtra", sql.Decimal(10, 2), taxaExtraAtualizado)
         .input("valorFinal", sql.Decimal(10, 2), valorFinalAtualizado) // Atualiza os dados de entrega
         .query(querySQLEntregas);
+
+      transaction.commit();
     } catch (error) {
+      transaction.rollback();
       console.error("Erro ao atualizar pedido:", error);
       throw error;
     }
   },
 
-  // Atualiza o status do pedido e da entrega
-  statusPedido: async (idPedido, statusPedido, statusEntrega) => {
-    try {
-      const pool = await getConnection();
-      // Utiliza o SQL para atualizar o status de pedidos e o status de entregas
-      const querySQL = `
-      UPDATE Entregas
-      SET statusEntrega = @statusEntrega
-      WHERE idPedido = @idPedido;
+  /**
+   * Busca a entrega relacionada a um pedido específico.
+   *
+   * @async
+   * @function buscarEntrega
+   * @param {string} idPedido - ID do pedido para buscar a entrega correspondente.
+   * @returns {Promise<Array>} Retorna um array com os dados da entrega.
+   * @throws Mostra no console o erro e propaga caso a busca falhe.
+   */
 
-      UPDATE Pedidos
-      SET statusPedido = @statusPedido
-      WHERE idPedido = @idPedido;
-    `;
-
-      await pool
-        .request()
-        .input("idPedido", sql.UniqueIdentifier, idPedido)
-        .input("statusPedido", sql.VarChar(11), statusPedido) // Passa o novo status de pedido
-        .input("statusEntrega", sql.VarChar(11), statusEntrega) // Passa o novo status de entrega
-        .query(querySQL);
-    } catch (error) {
-      console.error("Erro ao atualizar o pedido:", error); // Caso haja erro ao atualizar, retorna ao usuário
-      throw error;
-    }
-  },
   buscarEntrega: async (idPedido) => {
     try {
       const pool = await getConnection();
@@ -244,37 +245,49 @@ const pedidoModel = {
     }
   },
 
+  /**
+   * Deleta um pedido e sua entrega associada no banco de dados.
+   *
+   * @async
+   * @function deletarPedido
+   * @param {string} idPedido - ID do pedido a ser deletado (UUID).
+   * @returns {Promise<void>} Retorna verdadeiro se exclusão for bem-sucedida.
+   * @throws Lança erro e realiza rollback caso a exclusão falhe.
+   */
+
   deletarPedido: async (idPedido) => {
+    const pool = await getConnection();
+    const transaction = new sql.Transaction(pool);
+
     try {
-      const pool = await getConnection();
-      const transaction = new sql.Transaction(pool);
       await transaction.begin();
-      const querySQL = `
-      DELETE FROM Pedidos
-      WHERE idPedido = @idPedido
-      `; // Consulta no SQL para deletar o pedido 
-      const querySQLEntregas = `      
-      DELETE FROM Entregas
-      WHERE idPedido = @idPedido
-    `;
 
-       // Executa a primeira consulta com o parâmetro 'idPedido'
+      // Deletar entregas primeiro
+      const deleteEntregasSQL = `
+        DELETE FROM Entregas
+        WHERE idPedido = @idPedido
+      `;
+
       await transaction
         .request()
         .input("idPedido", sql.UniqueIdentifier, idPedido)
-        .query(querySQLEntregas);
+        .query(deleteEntregasSQL);
 
-      // Executa a primeira consulta com o parâmetro 'idPedido'
+      // Deletar o pedido
+      const deletePedidoSQL = `
+        DELETE FROM Pedidos
+        WHERE idPedido = @idPedido
+      `;
+
       await transaction
         .request()
         .input("idPedido", sql.UniqueIdentifier, idPedido)
-        .query(querySQL);
+        .query(deletePedidoSQL);
 
-      transaction.commit(); //Confirma a transição se as duas consultas forem bem sucedidas
-
+      await transaction.commit();
     } catch (error) {
-      transaction.rollback();
-      console.error("Erro ao deletar o pedido:", error); // Caso haja erro, é relatado ao cliente
+      await transaction.rollback();
+      console.error("Erro ao deletar pedido:", error);
       throw error;
     }
   },
